@@ -12,8 +12,10 @@ function createArrowSvg(isPositive) {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Load data directly
-        const data = await loadCSVData('data/vw_kpi_air_arrivals_ytd_summary.csv');
+        const data = await loadCSVData('data/vw_kpi_economic_accommodation_and_food_employment.csv');
+        const earningsData = await loadCSVData('data/vw_kpi_economic_accommodation_and_food_weekly_earnings.csv');
         
+
         if (!data || !data.data) {
             console.error('No data available');
             return;
@@ -21,8 +23,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Update metric cards with latest data
         function updateMetricCards() {
+            //employment
             const sortedData = [...data.data].sort((a, b) => new Date(b[0]) - new Date(a[0]));
             const latestData = sortedData[0];
+
+            //earnings
+            const sortedEData = [...earningsData.data].sort((a, b) => new Date(b[0]) - new Date(a[0]));
+            const latestEData = sortedEData[0];
             
             if (!latestData) {
                 console.error('No latest data available');
@@ -68,12 +75,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const arrow = createArrowSvg(ytdChangeValue >= 0);
                 ytdChangeElement.innerHTML = `<span style="color: ${color};">${arrow}${ytdChangeValue.toFixed(1)}%</span>`;
             }
+
+            // Update Average Weekly Earnings
+            const ytdEarningsAmountElement = document.getElementById('ytd-earn-amount');
+            const ytdEarningsDateRangeElement = document.getElementById('ytd-earn-date-range');
+            if (latestEData) {
+                const ytdTotal = parseFloat(latestEData[6]).toLocaleString();
+                const date = new Date(latestEData[0]);
+                const month = date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+                const year = date.getFullYear();
+                
+                ytdEarningsAmountElement.textContent = `$${ytdTotal}`;
+                ytdEarningsDateRangeElement.textContent = `Jan - ${month} ${year}`;
+            }
+
+
+            const ytdEarningsChangeElement = document.getElementById('ytd-earn-change');
+            if (latestEData && latestEData[8]) {
+                const ytdEChangeValue = parseFloat(latestEData[8]);
+                let color;
+                if (ytdEChangeValue >= -1 && ytdEChangeValue <= 1) {
+                    color = '#6c757d';  // Dark grey for neutral changes
+                } else if (ytdEChangeValue > 1) {
+                    color = '#28a745';  // Green for positive changes
+                } else {
+                    color = '#dc3545';  // Red for negative changes
+                }
+                const arrow = createArrowSvg(ytdEChangeValue >= 0);
+                ytdEarningsChangeElement.innerHTML = `<span style="color: ${color};">${arrow}${ytdEChangeValue.toFixed(1)}%</span>`;
+            }
         }
 
         // Initialize charts for both views
         const monthlyConfig = {
-            ...datasetConfigs.airArrivals,
-            dataFile: 'data/vw_kpi_air_arrivals_ytd_summary.csv'
+            ...datasetConfigs.accommodationEmployment,
+            dataFile: 'data/vw_kpi_economic_accommodation_and_food_employment.csv'
+        };
+        // Initialize charts for both views
+        const monthlyConfig2 = {
+            ...datasetConfigs.accommodationEarnings,
+            dataFile: 'data/vw_kpi_economic_accommodation_and_food_weekly_earnings.csv'
         };
 
         const yearlyConfig = {
@@ -81,36 +122,59 @@ document.addEventListener('DOMContentLoaded', async () => {
                 type: 'column' // Vertical bar chart
             },
             title: {
-                text: 'Yearly Airport Arrivals'
+                text: 'Average Monthly Employment and Weekly Earnings in Accommodation and Food Services'
             },
             xAxis: {
                 type: 'category',
                 title: {
-                    text: 'Year'
+                    text: 'Year',
                 }
             },
-            yAxis: {
-                title: {
-                    text: 'Total Arrivals'
+            yAxis: [
+                {
+                    title: {
+                        text: 'Employment'
+                    },
+                    opposite: false // Employment will be on the left
+                },
+                {
+                    title: {
+                        text: 'Weekly Earnings'
+                    },
+                    opposite: true // Weekly earnings will be on the right
                 }
-            },
+            ],
             series: [
                 {
-                    name: 'Arrivals',
+                    name: 'Employment',
                     data: [],
-                    color: '#244c5a'
+                    color: '#244c5a',
+                    yAxis: 0 // Maps to the first y-axis
+                },
+                {
+                    name: 'Weekly Earnings',
+                    data: [],
+                    color: '#f39c12',
+                    type: 'spline', // Line type for earnings
+                    yAxis: 1 // Maps to the second y-axis
                 }
             ],
             tooltip: {
-                pointFormat: 'Arrivals: <b>{point.y}</b>'
+                shared: true,
+                formatter: function () {
+                    let tooltip = `<b>${this.x}</b><br/>`;
+                    this.points.forEach(point => {
+                        tooltip += `${point.series.name}: <b>${point.y}</b><br/>`;
+                    });
+                    return tooltip;
+                }
             },
             time: {
                 timezone: 'UTC' // Ensure data uses UTC
             },
             credits: {
                 enabled: false
-            }
-            ,
+            },
             plotOptions: {
                 column: {
                     stacking: 'normal',
@@ -126,28 +190,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         const yearlyData = data.data.reduce((acc, row) => {
             const date = new Date(row[0]);
             const year = date.getUTCFullYear();
-            const month = date.getUTCMonth() + 1; // JavaScript months are zero-based (0 = January, 11 = December)
-            const arrivals = parseFloat(row[3]);
+            const month = date.getUTCMonth(); // Zero-based: 11 = December
         
-            // Check if the year is already being processed
-            if (!acc[year]) {
-                // Check if there is a row for December for this year
-                const hasDecember = data.data.some(r => {
-                    const rDate = new Date(r[0]);
-                    return rDate.getUTCFullYear() === year && rDate.getUTCMonth() === 11; // December
-                });
-        
-                if (!hasDecember) {
-                    // Skip this year if it does not have a December row
-                    return acc;
-                }
-        
-                // Initialize the year in the accumulator
-                acc[year] = 0;
+            // Only process rows for December
+            if (month === 11) {
+                const arrivals = parseFloat(row[6]);
+                // Set the December arrivals value for the year in the accumulator
+                acc[year] = arrivals;
             }
         
-            // Add arrivals to the year
-            acc[year] += arrivals;
+            return acc;
+        }, {});
+
+
+        const yearlyEarningsData = earningsData.data.reduce((acc, row) => {
+            const date = new Date(row[0]);
+            const year = date.getUTCFullYear();
+            const month = date.getUTCMonth(); // Zero-based: 11 = December
+        
+            // Only process rows for December
+            if (month === 11) {
+                const earnings = parseFloat(row[6]);
+                // Set the December earnings value for the year in the accumulator
+                acc[year] = earnings;
+            }
         
             return acc;
         }, {});
@@ -158,11 +224,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             y: total
         }));
 
+        yearlyConfig.series[1].data = Object.entries(yearlyEarningsData).map(([year, total]) => ({
+            name: year.toString(),
+            y: total
+        }));
+
         // Initialize charts
         const yearlyChart = Highcharts.chart('yearly-chart', yearlyConfig); // Default Highcharts
         const monthlyChart = new ChartBuilder('indicator-chart', monthlyConfig);
+        const monthlyChart2 = new ChartBuilder('indicator-chart2', monthlyConfig2);
 
         await monthlyChart.initialize();
+        await monthlyChart2.initialize();
 
         // Update metrics immediately
         updateMetricCards();

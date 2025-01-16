@@ -128,6 +128,60 @@ const datasetConfigs = {
         valueFormat: 'number',
         description: 'Monthly passengers deplaning from Erik Nielsen Whitehorse International Airport. This dataset provides arrival statistics showing passenger traffic trends.'
     },
+    restaurantSpending: {
+        id: 'restaurant-spending',
+        title: 'Monthly Restaurant Spending',
+        yAxisTitle: 'Spending ($M)',
+        valueFormat: 'number',
+        tooltip: {
+            formatter: function () {
+                return 'Spending: <b>$' + Highcharts.numberFormat(this.y / 1000000, 1) + 'M</b>';
+            }
+        },
+        yAxis: {
+            labels: {
+                formatter: function () {
+                    return '$' + Highcharts.numberFormat(this.value / 1000000, 1) + 'M';
+                }
+            },
+            title: {
+                text: 'Spending ($M)'
+            }
+        }
+    },
+    retailSpending: {
+        id: 'retail-spending',
+        title: 'Monthly Retail Spending',
+        yAxisTitle: 'Spending ($M)',
+        valueFormat: 'number',
+        tooltip: {
+            formatter: function () {
+                return 'Spending: <b>$' + Highcharts.numberFormat(this.y / 1000000, 1) + 'M</b>';
+            }
+        },
+        yAxis: {
+            labels: {
+                formatter: function () {
+                    return '$' + Highcharts.numberFormat(this.value / 1000000, 1) + 'M';
+                }
+            },
+            title: {
+                text: 'Spending ($M)'
+            }
+        }
+    },
+    accommodationEmployment: {
+        id: 'accommodation-employment',
+        title: 'Employment in the Accommodation and Food Services Industry',
+        yAxisTitle: 'Employment',
+        valueFormat: 'number'
+    },
+    accommodationEarnings: {
+        id: 'accommodation-earnings',
+        title: 'Average weekly earnings in the Accommodation and Food Services Industry',
+        yAxisTitle: 'Weekly earnings ($)',
+        valueFormat: 'number'
+    },
     intlTravelers: {
         id: 'intl-travelers',
         title: 'Border Crossings',
