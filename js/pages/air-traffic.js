@@ -12,7 +12,7 @@ function createArrowSvg(isPositive) {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Load data directly
-        const data = await loadCSVData('data/vw_kpi_air_arrivals_ytd_summary.csv');
+        const data = await loadCSVData('https://raw.githubusercontent.com/btelliot/drupal-air-js-test/refs/heads/main/data/vw_kpi_air_arrivals_ytd_summary.csv');
         
         if (!data || !data.data) {
             console.error('No data available');
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize charts for both views
         const monthlyConfig = {
             ...datasetConfigs.airArrivals,
-            dataFile: 'data/vw_kpi_air_arrivals_ytd_summary.csv'
+            dataFile: 'https://raw.githubusercontent.com/btelliot/drupal-air-js-test/refs/heads/main/data/vw_kpi_air_arrivals_ytd_summary.csv'
         };
 
         const yearlyConfig = {
